@@ -1,52 +1,71 @@
-/* Logo */
-/* Adapted from Zachary Blackwood */
+/* General Background */
+body {
+    background-color: #ffffff; /* White background */
+}
+
+/* Sidebar Customization */
 [data-testid="stSidebar"] {
-    background-image: url(https://streamlit.io/images/brand/streamlit-logo-secondary-colormark-darktext.png);
-    background-size: 200px;
-    background-repeat: no-repeat;
-    background-position: 4px 20px;
+    background-color: #1f4a8b; /* Blue sidebar */
+    color: white; /* White text */
 }
 
+/* Logo inside Sidebar */
+[data-testid="stSidebar"] .css-18e3th9 {
+    color: white;
+}
 
-/* Card */
-/* Adapted from https://startbootstrap.com/theme/sb-admin-2 */
+/* Sidebar header */
+.stSidebar .css-1v3nu5p {
+    font-size: 1.5em;
+    color: #ffffff;
+}
+
+/* Metrics Box Styling */
 div.css-1r6slb0.e1tzin5v2 {
-background-color: #FFFFFF;
-border: 1px solid #CCCCCC;
-padding: 5% 5% 5% 10%;
-border-radius: 5px;
-
-border-left: 0.5rem solid #9AD8E1 !important;
-box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-
+    background-color: #ffffff; /* White background for the boxes */
+    border: 1px solid #cccccc;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Slight shadow for the boxes */
 }
 
+/* Color for Metric Labels */
 label.css-mkogse.e16fv1kl2 {
-color: #36b9cc !important;
-font-weight: 700 !important;
-text-transform: uppercase !important;
+    color: #1f4a8b; /* Blue color for metric labels */
+    font-weight: bold;
 }
 
-
-/* Move block container higher */
-div.block-container.css-18e3th9.egzxvld2 {
-margin-top: -5em;
+/* Blue Color for Metric Values */
+div.css-1v6w53c.e1tzin5v2 {
+    color: #1f4a8b; /* Blue color for values */
+    font-size: 1.2em;
 }
 
-
-/* Hide hamburger menu and footer */
+/* Adjust Sidebar Scroll */
 div.css-r698ls.e8zbici2 {
-display: none;
+    overflow: auto;
 }
 
+/* Card Styling for the Donut Chart */
+div.css-1r6slb0.e1tzin5v2 {
+    background-color: #ffffff;
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Donut Chart and Heatmap Adjustments */
+div.css-1r6slb0.e1tzin5v2 {
+    background-color: #ffffff;
+}
+
+/* Footer removal */
 footer.css-ipbk5a.egzxvld4 {
-display: none;
+  display: none;
 }
 
-footer.css-12gp8ed.eknhn3m4 {
-display: none;
-}
-
+/* Remove hamburger menu from the sidebar */
 div.vg-tooltip-element {
-display: none;
+  display: none;
 }
