@@ -1,19 +1,31 @@
-# 🎈 Blank app template
+# Weather Impact on Public Transport Dashboard
 
-A simple Streamlit app template for you to modify!
+## Overview:
+This Streamlit dashboard provides insights into the relationship between weather conditions and public transport delays. It visualizes key metrics, weather data, and trends that can help in better planning and managing public transport services.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+## Features:
+- **Key Metrics**: Total delays, affected transport routes, and average delays.
+- **Visualizations**:
+    - Heatmap for weather delays over time.
+    - Donut chart for the distribution of weather conditions.
+    - Line chart to track delay trends over time.
+  
+## How to Run the App:
+1. Clone this repository.
+2. Install the required dependencies using:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3. Run the Streamlit app with:
+    ```bash
+    streamlit run streamlit_app.py
+    ```
 
-### How to run it on your own machine
+## Customization:
+- Use the sidebar to filter the data by the desired date range.
+- Select parameters to customize the charts (e.g., heatmap color, donut chart data).
 
-1. Install the requirements
+## Feedback:
+Please provide your feedback or suggestions via the feedback section in the app.
 
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## Developed by Anas Kagigi - w1914597
