@@ -228,7 +228,7 @@ else:
     """)
 
     # Train a Decision Tree model for prediction
-    @st.cache_resource  # Use @st.cache if using an older version of Streamlit
+    @st.cache # Use @st.cache if using an older version of Streamlit
     def train_decision_tree(mode):
         features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
         
