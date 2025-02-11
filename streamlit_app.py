@@ -1,205 +1,297 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor, plot_tree
+import matplotlib.pyplot as plt
 
-# Load the data
-df = pd.read_csv('data/5_Years_Weather_Impact_on_Public_Transport.csv')  # Ensure the correct file path
+# Set page configuration
+st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Convert 'Date' column to datetime
-df['Date'] = pd.to_datetime(df['Date'])
+# Load data
+@st.cache_data
+def load_data():
+    return pd.read_csv("data/london_transport_weather_2019_2024_rounded.csv")
 
-# Sidebar configuration
-st.sidebar.header('Dashboard Controls')
+data = load_data()
 
-# Sidebar: Select transport types (Bus, Train, etc.)
-transport_types = [x for x in df['Public Transport Route'].unique() if x != 'No Service']
-selected_transport = st.sidebar.multiselect('Select Transport Type(s)', options=transport_types)
+# Sidebar for user inputs
+st.sidebar.title("Public Transport Weather Impact Dashboard")
+st.sidebar.markdown("Explore how weather affects London's public transport.")
 
-# Sidebar: Select year range (Start and End Year)
-start_year = st.sidebar.selectbox('Select Start Year', options=sorted(df['Date'].dt.year.unique()), index=0)
-end_year = st.sidebar.selectbox('Select End Year', options=sorted(df['Date'].dt.year.unique()), index=len(df['Date'].dt.year.unique())-1)
+# Reset selections on rerun
+if 'selected_conditions' not in st.session_state:
+    st.session_state.selected_conditions = []
+if 'selected_modes' not in st.session_state:
+    st.session_state.selected_modes = []
+if 'selected_years' not in st.session_state:
+    st.session_state.selected_years = []
 
-# Sidebar: Select weather conditions
-weather_conditions = ['Clear', 'Fog', 'Rain', 'Snow', 'Wind', 'Ice']
-selected_weather = st.sidebar.multiselect('Select Weather Condition(s)', options=weather_conditions)
+# Multi-select for weather conditions
+weather_conditions = data["Weather Condition"].unique()
+selected_conditions = st.sidebar.multiselect(
+    "Select Weather Conditions", 
+    options=weather_conditions,
+    default=st.session_state.selected_conditions
+)
 
-# Sidebar: Select Time of Day (Rush Hour / Off-Peak)
-time_of_day_options = ['Off-Peak', 'Rush Hour']
-selected_time_of_day = st.sidebar.multiselect('Select Time of Day', options=time_of_day_options)
+# Multi-select for transport modes
+transport_modes = ["Underground", "Bus", "Overground", "Tram", "DLR", "National Rail"]
+selected_modes = st.sidebar.multiselect(
+    "Select Transport Modes", 
+    options=transport_modes,
+    default=st.session_state.selected_modes
+)
 
-# Ensure the user has selected both year range, transport type(s), weather condition(s), and time of day
-if not selected_transport or not start_year or not end_year or not selected_weather or not selected_time_of_day:
-    st.markdown(""" 
-        # Impact of Weather on Public Transport Dashboard
-        Please select the year range, transport type(s), weather condition(s), and time of day from the sidebar to view the data.
-    """)
+# Multi-select for years
+data['Year'] = pd.to_datetime(data['Date']).dt.year  # Extract year from Date column
+available_years = sorted(data['Year'].unique())
+selected_years = st.sidebar.multiselect(
+    "Select Years", 
+    options=available_years,
+    default=st.session_state.selected_years
+)
+
+# Save selections to session state
+st.session_state.selected_conditions = selected_conditions
+st.session_state.selected_modes = selected_modes
+st.session_state.selected_years = selected_years
+
+# Filter data based on selected weather conditions, transport modes, and years
+filtered_data = data[
+    (data["Weather Condition"].isin(selected_conditions)) &
+    (data['Year'].isin(selected_years))
+]
+
+# Title and Introduction
+st.title("Impact of Weather on London's Public Transport")
+st.markdown("""
+This dashboard analyzes how different weather conditions affect delays, cancellations, and ridership across London's public transport modes.
+""")
+
+# Handle empty selections
+if not selected_conditions or not selected_modes or not selected_years:
+    st.warning("Please select at least one weather condition, one transport mode, and one year from the sidebar to proceed.")
 else:
-    st.header(f"Impact of Weather on Selected Transport for {start_year} - {end_year}")
-    
-    # Filter data based on the selected year range, transport type(s), weather condition(s), and time of day
-    filtered_df = df[(df['Date'].dt.year >= start_year) & 
-                     (df['Date'].dt.year <= end_year) & 
-                     df['Public Transport Route'].isin(selected_transport) &
-                     df['Weather Condition'].isin(selected_weather)]
+    # Section 1: Key Metrics
+    st.header(f"Key Metrics for Selected Conditions, Modes, and Years")
+    col1, col2, col3 = st.columns(3)
 
-    # Filter by Time of Day (Rush Hour / Off-Peak) if only one is selected
-    if 'Rush Hour' in selected_time_of_day and 'Off-Peak' not in selected_time_of_day:
-        filtered_df = filtered_df[filtered_df['Time of Day'] == 'Rush Hour']
-    elif 'Off-Peak' in selected_time_of_day and 'Rush Hour' not in selected_time_of_day:
-        filtered_df = filtered_df[filtered_df['Time of Day'] == 'Off-Peak']
-    
-    # If both Rush Hour and Off-Peak are selected, show all data
-    if 'Rush Hour' in selected_time_of_day and 'Off-Peak' in selected_time_of_day:
-        pass  # No need to filter, show all data for both time periods
+    # Calculate average delays, cancellations, and ridership for selected transport modes
+    avg_delays = filtered_data[[f"{mode} Delays (min)" for mode in selected_modes]].mean().round(1)
+    avg_cancellations = filtered_data[[f"{mode} Cancellations (%)" for mode in selected_modes]].mean().round(1)
+    avg_ridership = filtered_data[[f"{mode} Ridership (thousands)" for mode in selected_modes]].mean().round(1)
 
-    # Check if the filtered data is empty
-    if filtered_df.empty:
-        st.warning("No data available for the selected filters. Please adjust your selections.")
+    with col1:
+        st.metric("Average Delays (min)", f"{avg_delays.max()} min", delta=f"{avg_delays.idxmax().split(' ')[0]} worst affected")
+    with col2:
+        st.metric("Average Cancellations (%)", f"{avg_cancellations.max()}%", delta=f"{avg_cancellations.idxmax().split(' ')[0]} worst affected")
+    with col3:
+        st.metric("Average Ridership (thousands)", f"{int(avg_ridership.max())}k", delta=f"{avg_ridership.idxmax().split(' ')[0]} highest ridership")
+
+    # Section 2: Visualizations
+    st.header("Visualizations")
+
+    # Bar Chart: Average Delays by Transport Mode
+    st.subheader("Average Delays by Transport Mode")
+    fig = px.bar(
+        x=avg_delays.index,
+        y=avg_delays.values,
+        labels={"x": "Transport Mode", "y": "Average Delays (min)"},
+        title="Average Delays by Transport Mode",
+        color=avg_delays.values,
+        color_continuous_scale="Viridis"
+    )
+    fig.update_traces(hovertemplate="Transport Mode: %{x}<br>Average Delay: %{y} min<extra></extra>")
+    st.plotly_chart(fig)
+    st.markdown("""
+    This bar chart shows the average delays (in minutes) experienced by each selected transport mode under the chosen weather conditions and years. 
+    The color gradient highlights the severity of delays, with darker colors indicating higher delays. 
+    Surface modes like buses and trams are typically more affected by adverse weather compared to underground services.
+    """)
+
+    # Box Plot: Distribution of Delays and Cancellations
+    st.subheader("Distribution of Delays and Cancellations")
+    delays_columns = [f"{mode} Delays (min)" for mode in selected_modes]
+    cancellations_columns = [f"{mode} Cancellations (%)" for mode in selected_modes]
+
+    fig = go.Figure()
+    for i, col in enumerate(delays_columns):
+        fig.add_trace(go.Box(y=filtered_data[col], name=col.split(" ")[0], marker_color=px.colors.sequential.Plasma[i % len(px.colors.sequential.Plasma)]))
+    fig.update_layout(title="Distribution of Delays Across Transport Modes", yaxis_title="Delays (min)")
+    st.plotly_chart(fig)
+    st.markdown("""
+    This box plot visualizes the distribution of delays for each transport mode, highlighting variability and outliers. 
+    The boxes represent the interquartile range (IQR), while the whiskers show the range of typical values. 
+    Extreme outliers (points outside the whiskers) indicate unusual delays caused by severe weather events.
+    """)
+
+    # Stacked Bar Chart: Total Delays and Cancellations Across Modes
+    st.subheader("Total Delays and Cancellations Across Transport Modes")
+    total_delays = filtered_data[delays_columns].sum().reset_index()
+    total_delays.columns = ["Mode", "Total Delays"]
+    total_cancellations = filtered_data[cancellations_columns].sum().reset_index()
+    total_cancellations.columns = ["Mode", "Total Cancellations"]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=total_delays["Mode"], y=total_delays["Total Delays"], name="Total Delays", marker_color=px.colors.sequential.Inferno[0]))
+    fig.add_trace(go.Bar(x=total_cancellations["Mode"], y=total_cancellations["Total Cancellations"], name="Total Cancellations", marker_color=px.colors.sequential.Inferno[2]))
+    fig.update_layout(barmode="stack", title="Total Delays and Cancellations Across Transport Modes")
+    st.plotly_chart(fig)
+    st.markdown("""
+    This stacked bar chart compares the total delays and cancellations across all selected transport modes. 
+    Each bar represents a transport mode, with delays shown in one color and cancellations in another. 
+    This visualization helps identify which modes are most disrupted by the selected weather conditions.
+    """)
+
+    # Scatter Plot: Weather Variables vs. Performance Metrics
+    st.subheader("Weather Variables vs. Performance Metrics")
+    scatter_data = filtered_data.melt(
+        id_vars=["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"],
+        value_vars=[f"{mode} Delays (min)" for mode in selected_modes],
+        var_name="Transport Mode", value_name="Delays"
+    )
+    fig = px.scatter(
+        scatter_data,
+        x="Precipitation (mm)",
+        y="Delays",
+        color="Transport Mode",
+        title="Impact of Precipitation on Delays",
+        labels={"Precipitation (mm)": "Precipitation (mm)", "Delays": "Delays (min)"},
+        color_discrete_sequence=px.colors.sequential.Magma
+    )
+    fig.update_traces(marker=dict(size=8), selector=dict(mode="markers"))
+    st.plotly_chart(fig)
+    st.markdown("""
+    This scatter plot examines the relationship between precipitation levels and delays for each transport mode. 
+    Each point represents a day, with the color indicating the transport mode. 
+    A positive trend suggests that higher precipitation leads to increased delays, particularly for surface modes like buses and trams.
+    """)
+
+    # Time-Series Heatmap: Daily Delays Over Time
+    st.subheader("Daily Delays Over Time")
+    heatmap_data = filtered_data.groupby(["Date"])[delays_columns].mean().reset_index()
+    heatmap_data.set_index("Date", inplace=True)
+    fig = px.imshow(
+        heatmap_data.T,
+        labels=dict(x="Date", y="Transport Mode", color="Average Delays"),
+        title="Daily Delays Across Transport Modes",
+        color_continuous_scale="Cividis"
+    )
+    fig.update_layout(width=800, height=600)
+    st.plotly_chart(fig)
+    st.markdown("""
+    This heatmap visualizes daily delays for each transport mode over time. 
+    Darker colors indicate higher delays, while lighter colors represent minimal disruptions. 
+    This view helps identify seasonal patterns, such as increased delays during winter months due to snow or ice.
+    """)
+
+    # Pie Chart: Proportion of Ridership Across Modes
+    st.subheader("Proportion of Ridership Across Transport Modes")
+    ridership_columns = [f"{mode} Ridership (thousands)" for mode in selected_modes]
+    ridership_data = filtered_data[ridership_columns].sum().reset_index()
+    ridership_data.columns = ["Mode", "Total Ridership"]
+    fig = px.pie(
+        ridership_data,
+        names="Mode",
+        values="Total Ridership",
+        title="Proportion of Ridership Across Transport Modes",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    st.plotly_chart(fig)
+    st.markdown("""
+    This pie chart shows the proportion of total ridership across the selected transport modes. 
+    It provides insight into which modes are most popular under the chosen weather conditions and years. 
+    For example, underground services often see higher ridership during adverse weather due to their resilience.
+    """)
+
+    # Section 3: Insights
+    st.header("Insights")
+    st.markdown("""
+    - **Heavy Snow**: Surface transport modes like buses and trams are most affected due to icy roads and reduced visibility.
+    - **Thunderstorms**: Trams and DLR experience higher delays due to lightning risks and power outages.
+    - **Clear Weather**: Underground services remain largely unaffected, while surface modes see increased ridership.
+    """)
+
+    # Explanation for Delays
+    st.subheader("Explanation for Delays")
+    st.markdown("""
+    - **Weather-Related Delays**: Heavy snow and thunderstorms cause significant disruptions due to unsafe road conditions and infrastructure damage.
+    - **Infrastructure Issues**: Aging infrastructure is more vulnerable during adverse weather.
+    - **Operational Errors**: Human errors and scheduling issues contribute to delays, especially during peak hours.
+    """)
+
+    # Section 4: Prediction Model with Decision Tree
+    st.header("Predict Delays Based on Weather Conditions")
+    st.markdown("""
+    Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
+    """)
+
+    # Train a Decision Tree model for prediction
+    @st.cache_resource
+    def train_decision_tree(mode):
+        features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
+        
+        # Check if 'Snowfall (cm)' exists in the dataset
+        if "Snowfall (cm)" in data.columns:
+            features.append("Snowfall (cm)")
+        
+        target = f"{mode} Delays (min)"
+        X = data[features]
+        y = data[target]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        model = DecisionTreeRegressor(random_state=42, max_depth=5)  # Limit depth for interpretability
+        model.fit(X_train, y_train)
+        return model, features  # Return both the model and the features list
+
+    if selected_modes:
+        selected_mode = selected_modes[0]  # Use the first selected mode for prediction
+        model, features = train_decision_tree(selected_mode)  # Get both the model and features
+
+        # Input fields for weather variables
+        st.subheader(f"Predict Delays for {selected_mode}")
+        temperature = st.number_input("Temperature (°C)", value=15.0)
+        precipitation = st.number_input("Precipitation (mm)", value=0.0)
+        wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
+        snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
+
+        # Predict button
+        if st.button("Predict"):
+            input_data = [[temperature, precipitation, wind_speed]]
+            
+            # Include snowfall if it exists in the dataset
+            if "Snowfall (cm)" in data.columns:
+                input_data[0].append(snowfall)
+            
+            prediction = model.predict(input_data)
+            st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+
+        # Visualize the decision tree
+        if st.checkbox("Show Decision Tree"):
+            fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
+            plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
+            st.pyplot(fig)
     else:
-        # Display message with selected filters
-        st.markdown(f"### Showing data for: {start_year} to {end_year} and {', '.join(selected_transport)} during {', '.join(selected_weather)} conditions in {', '.join(selected_time_of_day)}.")
+        st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
 
-        # Key Performance Indicators (KPIs)
-        st.subheader('Key Performance Indicators (KPIs)')
-        col1, col2, col3, col4 = st.columns(4)
-
-        # Total Delays (minutes)
-        total_delays = int(filtered_df['Delay Due to Weather (minutes)'].sum())
-        col1.metric("Total Delays (minutes)", f"{total_delays:,}", delta=total_delays)
-
-        # Total Routes Affected
-        total_routes = int(filtered_df['Public Transport Route'].nunique())
-        col2.metric("Total Routes Affected", total_routes)
-
-        # Average Delay (minutes)
-        avg_delay = float(filtered_df['Delay Due to Weather (minutes)'].mean())
-        col3.metric("Average Delay (minutes)", f"{avg_delay:.1f}", delta=avg_delay)
-
-        # Average Wind Speed
-        avg_wind_speed = filtered_df['Wind Speed (km/h)'].mean()
-        col4.metric("Average Wind Speed (km/h)", f"{avg_wind_speed:.1f}")
-
-        # --- Additional KPIs for Weather Conditions ---
-        # Average Temperature (°C)
-        avg_temperature = filtered_df['Temperature (°C)'].mean()
-
-        # Average Rainfall (mm)
-        avg_rainfall = filtered_df['Rainfall (mm)'].mean()
-
-        # Average Humidity (%)
-        avg_humidity = filtered_df['Humidity (%)'].mean()
-
-        st.write(f"**Average Temperature (°C):** {avg_temperature:.1f}°C")
-        st.write(f"**Average Rainfall (mm):** {avg_rainfall:.1f} mm")
-        st.write(f"**Average Humidity (%):** {avg_humidity:.1f}%")
-
-        # --- Visualization Section ---
-        st.subheader('Visualizations')
-
-        # Create columns for side-by-side visualization
-        col1, col2 = st.columns(2)
-
-        with col1:
-            # Heatmap for delays over time (Weekly Data)
-            st.write("### Heatmap: Delays Over Time (Weekly)")
-            st.write(""" 
-                This heatmap shows how weather delays are distributed across weeks and years.
-                The values represent the total delays due to weather conditions, categorized by week and year.
-            """)
-            heatmap_data = filtered_df.pivot_table(values='Delay Due to Weather (minutes)', 
-                                                   index=filtered_df['Date'].dt.isocalendar().week, 
-                                                   columns=filtered_df['Date'].dt.year, 
-                                                   aggfunc=np.sum)
-            
-            # Create interactive heatmap using Plotly
-            fig = go.Figure(data=go.Heatmap(z=heatmap_data.values, 
-                                           x=heatmap_data.columns, 
-                                           y=heatmap_data.index, 
-                                           colorscale='Blues', 
-                                           colorbar=dict(title="Delay (minutes)"),
-                                           hoverongaps=False))
-            fig.update_layout(title=f'{", ".join(selected_transport)} Delays by Week ({start_year} - {end_year})', 
-                              xaxis_title='Year', 
-                              yaxis_title='Week')
-            st.plotly_chart(fig, use_container_width=True)
-
-        with col2:
-            # Donut Chart for weather condition distribution
-            st.write("### Donut Chart: Weather Condition Distribution")
-            st.write(""" 
-                This donut chart shows the distribution of different weather conditions (e.g., Fog, Rain, Snow, etc.) that caused delays.
-            """)
-            weather_counts = filtered_df['Weather Condition'].value_counts()
-            
-            # Create interactive donut chart using Plotly
-            fig = go.Figure(data=[go.Pie(labels=weather_counts.index, 
-                                         values=weather_counts.values, 
-                                         hole=0.3, 
-                                         hoverinfo='label+percent+value')])
-            fig.update_layout(title=f'{", ".join(selected_transport)} Weather Condition Distribution')
-            st.plotly_chart(fig, use_container_width=True)
-
-        # Line chart for delay trends over time
-        st.write("### Line Chart: Delay Trends Over Time")
-        st.write(""" 
-            This line chart shows how the average delay due to weather changes over time.
-            By analyzing this, we can identify periods where delays were particularly severe.
+    # Section 5: Download Filtered Data
+    if not filtered_data.empty:
+        st.subheader("Download Filtered Data")
+        st.markdown("""
+        You can download the filtered data based on your selections from the sidebar.
         """)
-        delay_over_time = filtered_df.groupby('Date')['Delay Due to Weather (minutes)'].mean().reset_index()
-        
-        # Create interactive line chart using Plotly
-        fig = go.Figure(data=go.Scatter(x=delay_over_time['Date'], 
-                                       y=delay_over_time['Delay Due to Weather (minutes)'], 
-                                       mode='lines', 
-                                       line=dict(color='green')))
-        fig.update_layout(title=f'{", ".join(selected_transport)} Average Delay Due to Weather Over Time', 
-                          xaxis_title='Date', 
-                          yaxis_title='Average Delay (minutes)')
-        st.plotly_chart(fig, use_container_width=True)
+        csv = filtered_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Filtered Data as CSV",
+            data=csv,
+            file_name="filtered_transport_weather_data.csv",
+            mime="text/csv"
+        )
+    else:
+        st.warning("No data available to download. Please make valid selections in the sidebar.")
 
-        # Additional Insights: Delays by Day of the Week
-        st.write("### Additional Insights: Delays by Day of the Week")
-        st.write(""" 
-            This bar chart shows the average delay by weather condition for each day of the week.
-        """)
-        day_of_week_data = filtered_df.groupby([filtered_df['Date'].dt.day_name(), 'Weather Condition'])['Delay Due to Weather (minutes)'].mean().unstack()
-        
-        # Create interactive bar chart using Plotly
-        fig = px.bar(day_of_week_data, x=day_of_week_data.index, y=day_of_week_data.columns,
-                     title=f'{", ".join(selected_transport)} Average Delays by Weather Condition for Each Day of the Week')
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Distribution of Delays Due to Weather
-        st.write("### Distribution of Delays Due to Weather")
-        st.write(""" 
-            This histogram shows the distribution of delays caused by weather conditions.
-        """)
-        fig = px.histogram(filtered_df, x="Delay Due to Weather (minutes)", nbins=20)
-        fig.update_layout(title=f'{", ".join(selected_transport)} Distribution of Delays Due to Weather')
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Weather vs Delay Boxplot
-        st.write("### Weather vs. Delay")
-        st.write(""" 
-            This boxplot shows how delays vary depending on the weather conditions.
-            It helps identify whether certain weather conditions, such as snow or rain, cause higher delays on average.
-        """)
-        fig = px.box(filtered_df, x="Weather Condition", y="Delay Due to Weather (minutes)", 
-                     title=f'{", ".join(selected_transport)} Delay Due to Weather by Weather Condition')
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Conclusion Section
-        st.subheader('Conclusion')
-        st.write(""" 
-            This dashboard provides insights into the relationship between weather conditions and public transport delays.
-            By analyzing these patterns, we can improve service delivery and minimize delays during adverse weather conditions.
-        """)
-        
-        # Feedback Section
-        st.subheader('Feedback')
-        st.write("Your feedback is valuable! Please provide any comments or suggestions below.")
-        feedback = st.text_area("Your Feedback")
-        if st.button("Submit Feedback"):
-            st.write("Thank you for your feedback!")
+# Footer
+st.markdown("---")
+st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
