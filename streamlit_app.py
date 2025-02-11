@@ -283,4 +283,8 @@ else:
             mime="text/csv"
         )
     else:
-        st.warning("No data available to download. Please make valid
+        st.warning("No data available to download. Please make valid selections in the sidebar.")
+
+# Footer
+st.markdown("---")
+st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
