@@ -4,14 +4,13 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor, plot_tree
-import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeRegressor
 
 # Set page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
 # Load data
-@st.cache_data
+@st.cache_data  # Use @st.cache if using an older version of Streamlit
 def load_data():
     return pd.read_csv("data/london_transport_weather_2019_2024.csv")
 
@@ -223,14 +222,14 @@ else:
     - **Operational Errors**: Human errors and scheduling issues contribute to delays, especially during peak hours.
     """)
 
-    # Section 4: Prediction Model with Decision Tree
+    # Section 4: Prediction Model
     st.header("Predict Delays Based on Weather Conditions")
     st.markdown("""
     Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
     """)
 
     # Train a Decision Tree model for prediction
-    @st.cache_resource
+    @st.cache_resource  # Use @st.cache if using an older version of Streamlit
     def train_decision_tree(mode):
         features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
         
@@ -267,12 +266,6 @@ else:
             
             prediction = model.predict(input_data)
             st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
-
-        # Visualize the decision tree
-        if st.checkbox("Show Decision Tree"):
-            fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
-            plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
-            st.pyplot(fig)
     else:
         st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
 
@@ -290,8 +283,4 @@ else:
             mime="text/csv"
         )
     else:
-        st.warning("No data available to download. Please make valid selections in the sidebar.")
-
-# Footer
-st.markdown("---")
-st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
+        st.warning("No data available to download. Please make valid
