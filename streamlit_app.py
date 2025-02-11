@@ -10,10 +10,9 @@ from sklearn.tree import DecisionTreeRegressor
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
 # Load data
-@st.cache_data  # Use @st.cache if using an older version of Streamlit
+@st.cache  # Use @st.cache for older versions of Streamlit
 def load_data():
     return pd.read_csv("data/london_transport_weather_2019_2024.csv")
-
 data = load_data()
 
 # Sidebar for user inputs
