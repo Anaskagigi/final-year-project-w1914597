@@ -13,7 +13,7 @@ st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 # Load data
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/london_transport_weather_2019_2024_rounded.csv")
+    return pd.read_csv("data/london_transport_weather_2019_2024.csv")
 
 data = load_data()
 
