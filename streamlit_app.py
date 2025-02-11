@@ -4,15 +4,17 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor, plot_tree
+import matplotlib.pyplot as plt
 
 # Set page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
 # Load data
-@st.cache  # Use @st.cache for older versions of Streamlit
+@st.cache
 def load_data():
-    return pd.read_csv("data/london_transport_weather_2019_2024.csv")
+    return pd.read_csv("data/london_transport_weather_2019_2024_rounded.csv")
+
 data = load_data()
 
 # Sidebar for user inputs
@@ -221,14 +223,14 @@ else:
     - **Operational Errors**: Human errors and scheduling issues contribute to delays, especially during peak hours.
     """)
 
-    # Section 4: Prediction Model
+    # Section 4: Prediction Model with Decision Tree
     st.header("Predict Delays Based on Weather Conditions")
     st.markdown("""
     Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
     """)
 
     # Train a Decision Tree model for prediction
-    @st.cache # Use @st.cache if using an older version of Streamlit
+    @st.cache
     def train_decision_tree(mode):
         features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
         
@@ -265,6 +267,12 @@ else:
             
             prediction = model.predict(input_data)
             st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+
+        # Visualize the decision tree
+        if st.checkbox("Show Decision Tree"):
+            fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
+            plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
+            st.pyplot(fig)
     else:
         st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
 
