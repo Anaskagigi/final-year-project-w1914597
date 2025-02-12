@@ -206,3 +206,23 @@ else:
     It provides insight into which modes are most popular under the chosen weather conditions and years. 
     For example, underground services often see higher ridership during adverse weather due to their resilience.
     """)
+
+    # Section 5: Download Filtered Data
+    if not filtered_data.empty:
+        st.subheader("Download Filtered Data")
+        st.markdown("""
+        You can download the filtered data based on your selections from the sidebar.
+        """)
+        csv = filtered_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Filtered Data as CSV",
+            data=csv,
+            file_name="filtered_transport_weather_data.csv",
+            mime="text/csv"
+        )
+    else:
+        st.warning("No data available to download. Please make valid selections in the sidebar.")
+
+# Footer
+st.markdown("---")
+st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
