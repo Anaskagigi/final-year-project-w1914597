@@ -223,6 +223,62 @@ else:
     else:
         st.warning("No data available to download. Please make valid selections in the sidebar.")
 
+# Prediction Section
+st.header("Predict Delays Based on Weather Conditions")
+st.markdown("""
+Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
+""")
+
+# Train a Decision Tree model for prediction (if it's not already trained)
+@st.cache_resource
+def train_decision_tree(mode):
+    features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
+    
+    # Check if 'Snowfall (cm)' exists in the dataset
+    if "Snowfall (cm)" in data.columns:
+        features.append("Snowfall (cm)")
+    
+    target = f"{mode} Delays (min)"
+    X = data[features]
+    y = data[target]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = DecisionTreeRegressor(random_state=42, max_depth=5)  # Limit depth for interpretability
+    model.fit(X_train, y_train)
+    return model, features  # Return both the model and the features list
+
+# Prediction Section
+if selected_modes:
+    selected_mode = selected_modes[0]  # Use the first selected mode for prediction
+    model, features = train_decision_tree(selected_mode)  # Get both the model and features
+
+    # Input fields for weather variables
+    st.subheader(f"Predict Delays for {selected_mode}")
+    temperature = st.number_input("Temperature (°C)", value=15.0)
+    precipitation = st.number_input("Precipitation (mm)", value=0.0)
+    wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
+    snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
+
+    # Predict button
+    if st.button("Predict"):
+        input_data = [[temperature, precipitation, wind_speed]]
+        
+        # Include snowfall if it exists in the dataset
+        if "Snowfall (cm)" in data.columns:
+            input_data[0].append(snowfall)
+        
+        # Get the prediction
+        prediction = model.predict(input_data)
+        st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+
+    # Visualize the decision tree if the user checks the box
+    if st.checkbox("Show Decision Tree"):
+        fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
+        plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
+        st.pyplot(fig)
+
+else:
+    st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
+
 # Footer
 st.markdown("---")
 st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
