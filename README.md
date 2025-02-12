@@ -95,7 +95,6 @@ final-year-project_w191459/
   - Scikit-learn
 
 ## **Contact**:
-For questions or feedback, feel free to reach out:
 
 - GitHub: [@Anaskagigi](https://github.com/Anaskagigi)
 - Email: [w1914597@my.westminster.ac.uk]
