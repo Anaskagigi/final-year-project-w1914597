@@ -18,10 +18,10 @@ def load_data():
 data = load_data()
 
 # Sidebar for user inputs
-st.sidebar.title("Public Transport Weather Impact Dashboard")
+st.sidebar.title("Impact of Weather on Public Transport  Dashboard")
 st.sidebar.markdown("Explore how weather affects London's public transport.")
 
-# Reset selections on rerun
+# Reseting the selections on reruning the app 
 if 'selected_conditions' not in st.session_state:
     st.session_state.selected_conditions = []
 if 'selected_modes' not in st.session_state:
@@ -65,13 +65,13 @@ filtered_data = data[
     (data['Year'].isin(selected_years))
 ]
 
-# Title and Introduction
+# Dashboard tittle
 st.title("Impact of Weather on London's Public Transport")
 st.markdown("""
 This dashboard analyzes how different weather conditions affect delays, cancellations, and ridership across London's public transport modes.
 """)
 
-# Handle empty selections
+# Handling empty selections if user used 
 if not selected_conditions or not selected_modes or not selected_years:
     st.warning("Please select at least one weather condition, one transport mode, and one year from the sidebar to proceed.")
 else:
@@ -79,7 +79,7 @@ else:
     st.header(f"Key Metrics for Selected Conditions, Modes, and Years")
     col1, col2, col3 = st.columns(3)
 
-    # Calculate average delays, cancellations, and ridership for selected transport modes
+    # Calculate average delays, cancellations, and ridership for selected transport modes on top of the page
     avg_delays = filtered_data[[f"{mode} Delays (min)" for mode in selected_modes]].mean().round(1)
     avg_cancellations = filtered_data[[f"{mode} Cancellations (%)" for mode in selected_modes]].mean().round(1)
     avg_ridership = filtered_data[[f"{mode} Ridership (thousands)" for mode in selected_modes]].mean().round(1)
