@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor, plot_tree
 import matplotlib.pyplot as plt
 
 # Set page configuration
@@ -105,7 +106,6 @@ else:
     )
     fig.update_traces(hovertemplate="Transport Mode: %{x}<br>Average Delay: %{y} min<extra></extra>")
     st.plotly_chart(fig)
-
     st.markdown("""
     This bar chart shows the average delays (in minutes) experienced by each selected transport mode under the chosen weather conditions and years. 
     The color gradient highlights the severity of delays, with darker colors indicating higher delays. 
@@ -122,7 +122,6 @@ else:
         fig.add_trace(go.Box(y=filtered_data[col], name=col.split(" ")[0], marker_color=px.colors.sequential.Plasma[i % len(px.colors.sequential.Plasma)]))
     fig.update_layout(title="Distribution of Delays Across Transport Modes", yaxis_title="Delays (min)")
     st.plotly_chart(fig)
-
     st.markdown("""
     This box plot visualizes the distribution of delays for each transport mode, highlighting variability and outliers. 
     The boxes represent the interquartile range (IQR), while the whiskers show the range of typical values. 
@@ -141,7 +140,6 @@ else:
     fig.add_trace(go.Bar(x=total_cancellations["Mode"], y=total_cancellations["Total Cancellations"], name="Total Cancellations", marker_color=px.colors.sequential.Inferno[2]))
     fig.update_layout(barmode="stack", title="Total Delays and Cancellations Across Transport Modes")
     st.plotly_chart(fig)
-
     st.markdown("""
     This stacked bar chart compares the total delays and cancellations across all selected transport modes. 
     Each bar represents a transport mode, with delays shown in one color and cancellations in another. 
@@ -166,7 +164,6 @@ else:
     )
     fig.update_traces(marker=dict(size=8), selector=dict(mode="markers"))
     st.plotly_chart(fig)
-
     st.markdown("""
     This scatter plot examines the relationship between precipitation levels and delays for each transport mode. 
     Each point represents a day, with the color indicating the transport mode. 
@@ -185,7 +182,6 @@ else:
     )
     fig.update_layout(width=800, height=600)
     st.plotly_chart(fig)
-
     st.markdown("""
     This heatmap visualizes daily delays for each transport mode over time. 
     Darker colors indicate higher delays, while lighter colors represent minimal disruptions. 
@@ -205,7 +201,6 @@ else:
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
     st.plotly_chart(fig)
-
     st.markdown("""
     This pie chart shows the proportion of total ridership across the selected transport modes. 
     It provides insight into which modes are most popular under the chosen weather conditions and years. 
