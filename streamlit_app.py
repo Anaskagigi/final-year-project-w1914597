@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 # Set page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Load data
-@st.cache
+# Load data with @st.cache_data
+@st.cache_data
 def load_data():
     return pd.read_csv("data/london_transport_weather_2019_2024.csv")
 
@@ -206,92 +206,3 @@ else:
     It provides insight into which modes are most popular under the chosen weather conditions and years. 
     For example, underground services often see higher ridership during adverse weather due to their resilience.
     """)
-
-    # Section 3: Insights
-    st.header("Insights")
-    st.markdown("""
-    - **Heavy Snow**: Surface transport modes like buses and trams are most affected due to icy roads and reduced visibility.
-    - **Thunderstorms**: Trams and DLR experience higher delays due to lightning risks and power outages.
-    - **Clear Weather**: Underground services remain largely unaffected, while surface modes see increased ridership.
-    """)
-
-    # Explanation for Delays
-    st.subheader("Explanation for Delays")
-    st.markdown("""
-    - **Weather-Related Delays**: Heavy snow and thunderstorms cause significant disruptions due to unsafe road conditions and infrastructure damage.
-    - **Infrastructure Issues**: Aging infrastructure is more vulnerable during adverse weather.
-    - **Operational Errors**: Human errors and scheduling issues contribute to delays, especially during peak hours.
-    """)
-
-    # Section 4: Prediction Model with Decision Tree
-    st.header("Predict Delays Based on Weather Conditions")
-    st.markdown("""
-    Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
-    """)
-
-    # Train a Decision Tree model for prediction
-    @st.cache
-    def train_decision_tree(mode):
-        features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
-        
-        # Check if 'Snowfall (cm)' exists in the dataset
-        if "Snowfall (cm)" in data.columns:
-            features.append("Snowfall (cm)")
-        
-        target = f"{mode} Delays (min)"
-        X = data[features]
-        y = data[target]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        model = DecisionTreeRegressor(random_state=42, max_depth=5)  # Limit depth for interpretability
-        model.fit(X_train, y_train)
-        return model, features  # Return both the model and the features list
-
-    if selected_modes:
-        selected_mode = selected_modes[0]  # Use the first selected mode for prediction
-        model, features = train_decision_tree(selected_mode)  # Get both the model and features
-
-        # Input fields for weather variables
-        st.subheader(f"Predict Delays for {selected_mode}")
-        temperature = st.number_input("Temperature (°C)", value=15.0)
-        precipitation = st.number_input("Precipitation (mm)", value=0.0)
-        wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
-        snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
-
-        # Predict button
-        if st.button("Predict"):
-            input_data = [[temperature, precipitation, wind_speed]]
-            
-            # Include snowfall if it exists in the dataset
-            if "Snowfall (cm)" in data.columns:
-                input_data[0].append(snowfall)
-            
-            prediction = model.predict(input_data)
-            st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
-
-        # Visualize the decision tree
-        if st.checkbox("Show Decision Tree"):
-            fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
-            plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
-            st.pyplot(fig)
-    else:
-        st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
-
-    # Section 5: Download Filtered Data
-    if not filtered_data.empty:
-        st.subheader("Download Filtered Data")
-        st.markdown("""
-        You can download the filtered data based on your selections from the sidebar.
-        """)
-        csv = filtered_data.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Filtered Data as CSV",
-            data=csv,
-            file_name="filtered_transport_weather_data.csv",
-            mime="text/csv"
-        )
-    else:
-        st.warning("No data available to download. Please make valid selections in the sidebar.")
-
-# Footer
-st.markdown("---")
-st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
