@@ -1,7 +1,6 @@
-streamlit==1.14.0
-pandas==1.5.1
-matplotlib==3.6.0
-seaborn==0.11.2
-numpy>=1.24.1,<1.25.0
-setuptools
-wheel
+streamlit>=1.10.0
+pandas
+numpy
+plotly
+scikit-learn
+matplotlib
