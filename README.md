@@ -83,15 +83,6 @@ final-year-project_w191459/
 - Explore the visualizations and insights provided in the dashboard.
 - Use the decision tree section to predict delays based on input weather variables.
 
-## **Contributing**:
-If you'd like to contribute to this project, please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Submit a pull request with a clear description of your changes.
-
-## **License**:
-This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
 
 ## **Acknowledgments**:
 - **Supervisor**: Rolf Banziger
@@ -107,4 +98,4 @@ This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE)
 For questions or feedback, feel free to reach out:
 
 - GitHub: [@Anaskagigi](https://github.com/Anaskagigi)
-- Email: [Your Email Address]
+- Email: [w1914597@my.westminster.ac.uk]
