@@ -270,12 +270,6 @@ if selected_modes:
         prediction = model.predict(input_data)
         st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
 
-    # Visualize the decision tree if the user checks the box
-    if st.checkbox("Show Decision Tree"):
-        fig, ax = plt.subplots(figsize=(20, 10))  # Increase figure size for better readability
-        plot_tree(model, feature_names=features, filled=True, fontsize=10, rounded=True, ax=ax)  # Adjust font size and style
-        st.pyplot(fig)
-
 else:
     st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
 
