@@ -3,16 +3,14 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor, export_text
-from sklearn import tree
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Set page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Load data
-@st.cache_data  # Use @st.cache if using an older version of Streamlit
+# Load data with @st.cache_data
+@st.cache_data
 def load_data():
     return pd.read_csv("data/london_transport_weather_2019_2024.csv")
 
@@ -108,6 +106,12 @@ else:
     fig.update_traces(hovertemplate="Transport Mode: %{x}<br>Average Delay: %{y} min<extra></extra>")
     st.plotly_chart(fig)
 
+    st.markdown("""
+    This bar chart shows the average delays (in minutes) experienced by each selected transport mode under the chosen weather conditions and years. 
+    The color gradient highlights the severity of delays, with darker colors indicating higher delays. 
+    Surface modes like buses and trams are typically more affected by adverse weather compared to underground services.
+    """)
+
     # Box Plot: Distribution of Delays and Cancellations
     st.subheader("Distribution of Delays and Cancellations")
     delays_columns = [f"{mode} Delays (min)" for mode in selected_modes]
@@ -119,57 +123,110 @@ else:
     fig.update_layout(title="Distribution of Delays Across Transport Modes", yaxis_title="Delays (min)")
     st.plotly_chart(fig)
 
-    # Section 3: Prediction Model
-    st.header("Predict Delays Based on Weather Conditions")
     st.markdown("""
-    Use the decision tree model below to predict delays based on weather variables such as temperature, precipitation, wind speed, and snowfall.
+    This box plot visualizes the distribution of delays for each transport mode, highlighting variability and outliers. 
+    The boxes represent the interquartile range (IQR), while the whiskers show the range of typical values. 
+    Extreme outliers (points outside the whiskers) indicate unusual delays caused by severe weather events.
     """)
 
-    # Train a Decision Tree model for prediction
-    @st.cache_resource  # Use @st.cache if using an older version of Streamlit
-    def train_decision_tree(mode):
-        features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
-        
-        # Check if 'Snowfall (cm)' exists in the dataset
-        if "Snowfall (cm)" in data.columns:
-            features.append("Snowfall (cm)")
-        
-        target = f"{mode} Delays (min)"
-        X = data[features]
-        y = data[target]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        model = DecisionTreeRegressor(random_state=42, max_depth=3)  # Limit depth for simplicity
-        model.fit(X_train, y_train)
-        return model, features  # Return both the model and the features list
+    # Stacked Bar Chart: Total Delays and Cancellations Across Modes
+    st.subheader("Total Delays and Cancellations Across Transport Modes")
+    total_delays = filtered_data[delays_columns].sum().reset_index()
+    total_delays.columns = ["Mode", "Total Delays"]
+    total_cancellations = filtered_data[cancellations_columns].sum().reset_index()
+    total_cancellations.columns = ["Mode", "Total Cancellations"]
 
-    if selected_modes:
-        selected_mode = selected_modes[0]  # Use the first selected mode for prediction
-        model, features = train_decision_tree(selected_mode)  # Get both the model and features
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=total_delays["Mode"], y=total_delays["Total Delays"], name="Total Delays", marker_color=px.colors.sequential.Inferno[0]))
+    fig.add_trace(go.Bar(x=total_cancellations["Mode"], y=total_cancellations["Total Cancellations"], name="Total Cancellations", marker_color=px.colors.sequential.Inferno[2]))
+    fig.update_layout(barmode="stack", title="Total Delays and Cancellations Across Transport Modes")
+    st.plotly_chart(fig)
 
-        # Display the decision tree rules as text
-        st.subheader("Decision Tree Rules")
-        tree_rules = export_text(model, feature_names=features)
-        st.text(tree_rules)
+    st.markdown("""
+    This stacked bar chart compares the total delays and cancellations across all selected transport modes. 
+    Each bar represents a transport mode, with delays shown in one color and cancellations in another. 
+    This visualization helps identify which modes are most disrupted by the selected weather conditions.
+    """)
 
-        # Input fields for weather variables
-        st.subheader(f"Predict Delays for {selected_mode}")
-        temperature = st.number_input("Temperature (°C)", value=15.0)
-        precipitation = st.number_input("Precipitation (mm)", value=0.0)
-        wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
-        snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
+    # Scatter Plot: Weather Variables vs. Performance Metrics
+    st.subheader("Weather Variables vs. Performance Metrics")
+    scatter_data = filtered_data.melt(
+        id_vars=["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"],
+        value_vars=[f"{mode} Delays (min)" for mode in selected_modes],
+        var_name="Transport Mode", value_name="Delays"
+    )
+    fig = px.scatter(
+        scatter_data,
+        x="Precipitation (mm)",
+        y="Delays",
+        color="Transport Mode",
+        title="Impact of Precipitation on Delays",
+        labels={"Precipitation (mm)": "Precipitation (mm)", "Delays": "Delays (min)"},
+        color_discrete_sequence=px.colors.sequential.Magma
+    )
+    fig.update_traces(marker=dict(size=8), selector=dict(mode="markers"))
+    st.plotly_chart(fig)
 
-        # Predict button
-        if st.button("Predict"):
-            input_data = [[temperature, precipitation, wind_speed]]
-            
-            # Include snowfall if it exists in the dataset
-            if "Snowfall (cm)" in data.columns:
-                input_data[0].append(snowfall)
-            
-            prediction = model.predict(input_data)
-            st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+    st.markdown("""
+    This scatter plot examines the relationship between precipitation levels and delays for each transport mode. 
+    Each point represents a day, with the color indicating the transport mode. 
+    A positive trend suggests that higher precipitation leads to increased delays, particularly for surface modes like buses and trams.
+    """)
+
+    # Time-Series Heatmap: Daily Delays Over Time
+    st.subheader("Daily Delays Over Time")
+    heatmap_data = filtered_data.groupby(["Date"])[delays_columns].mean().reset_index()
+    heatmap_data.set_index("Date", inplace=True)
+    fig = px.imshow(
+        heatmap_data.T,
+        labels=dict(x="Date", y="Transport Mode", color="Average Delays"),
+        title="Daily Delays Across Transport Modes",
+        color_continuous_scale="Cividis"
+    )
+    fig.update_layout(width=800, height=600)
+    st.plotly_chart(fig)
+
+    st.markdown("""
+    This heatmap visualizes daily delays for each transport mode over time. 
+    Darker colors indicate higher delays, while lighter colors represent minimal disruptions. 
+    This view helps identify seasonal patterns, such as increased delays during winter months due to snow or ice.
+    """)
+
+    # Pie Chart: Proportion of Ridership Across Modes
+    st.subheader("Proportion of Ridership Across Transport Modes")
+    ridership_columns = [f"{mode} Ridership (thousands)" for mode in selected_modes]
+    ridership_data = filtered_data[ridership_columns].sum().reset_index()
+    ridership_data.columns = ["Mode", "Total Ridership"]
+    fig = px.pie(
+        ridership_data,
+        names="Mode",
+        values="Total Ridership",
+        title="Proportion of Ridership Across Transport Modes",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    st.plotly_chart(fig)
+
+    st.markdown("""
+    This pie chart shows the proportion of total ridership across the selected transport modes. 
+    It provides insight into which modes are most popular under the chosen weather conditions and years. 
+    For example, underground services often see higher ridership during adverse weather due to their resilience.
+    """)
+
+    # Section 5: Download Filtered Data
+    if not filtered_data.empty:
+        st.subheader("Download Filtered Data")
+        st.markdown("""
+        You can download the filtered data based on your selections from the sidebar.
+        """)
+        csv = filtered_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Filtered Data as CSV",
+            data=csv,
+            file_name="filtered_transport_weather_data.csv",
+            mime="text/csv"
+        )
     else:
-        st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
+        st.warning("No data available to download. Please make valid selections in the sidebar.")
 
 # Footer
 st.markdown("---")
