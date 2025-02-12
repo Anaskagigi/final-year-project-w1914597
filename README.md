@@ -71,4 +71,4 @@ This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE)
 For questions or feedback, feel free to reach out:
 
 - GitHub: [@Anaskagigi](https://github.com/Anaskagigi)
-- Email: [Your Email Address]
+- Email: [w1914597@my.westminster.ac.uk]
