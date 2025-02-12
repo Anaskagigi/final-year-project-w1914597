@@ -225,4 +225,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
+st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project-w1914597).")
