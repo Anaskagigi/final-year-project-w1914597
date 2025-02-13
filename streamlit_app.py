@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor, plot_tree
 import matplotlib.pyplot as plt
 
-# Set page configuration
+# Setting page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Load data with @st.cache_data
+# Loading the data with @st.cache_data
 @st.cache_data
 def load_data():
     return pd.read_csv("data/london_transport_weather_2019_2024.csv")
@@ -54,18 +54,18 @@ selected_years = st.sidebar.multiselect(
     default=st.session_state.selected_years
 )
 
-# Save selections to session state
+# Saving the selections to session state
 st.session_state.selected_conditions = selected_conditions
 st.session_state.selected_modes = selected_modes
 st.session_state.selected_years = selected_years
 
-# Filter data based on selected weather conditions, transport modes, and years
+# Filtering data based on selected weather conditions, transport modes, and years
 filtered_data = data[
     (data["Weather Condition"].isin(selected_conditions)) &
     (data['Year'].isin(selected_years))
 ]
 
-# Dashboard tittle
+# Dashboard title
 st.title("Impact of Weather on London's Public Transport")
 st.markdown("""
 This dashboard analyzes how different weather conditions affect delays, cancellations, and ridership across London's public transport modes.
@@ -207,7 +207,15 @@ else:
     For example, underground services often see higher ridership during adverse weather due to their resilience.
     """)
 
-    # Section 5: Download Filtered Data
+    # Section 3: Insights
+    st.header("Insights")
+    st.markdown("""
+    - **Heavy Snow**: Surface transport modes like buses and trams are most affected due to icy roads and reduced visibility.
+    - **Thunderstorms**: Trams and DLR experience higher delays due to lightning risks and power outages.
+    - **Clear Weather**: Underground services remain largely unaffected, while surface modes see increased ridership.
+    """)
+
+    # Section 5: Downloadong the Filtered Data
     if not filtered_data.empty:
         st.subheader("Download Filtered Data")
         st.markdown("""
@@ -229,12 +237,12 @@ st.markdown("""
 Enter weather variables below to predict delays for the selected transport mode during the chosen weather condition.
 """)
 
-# Train a Decision Tree model for prediction (if it's not already trained)
+# Train a Decision Tree model for prediction
 @st.cache_resource
 def train_decision_tree(mode):
     features = ["Temperature (°C)", "Precipitation (mm)", "Wind Speed (km/h)"]
     
-    # Check if 'Snowfall (cm)' exists in the dataset
+    # Checking if 'Snowfall (cm)' exists in the dataset
     if "Snowfall (cm)" in data.columns:
         features.append("Snowfall (cm)")
     
@@ -252,27 +260,4 @@ if selected_modes:
     model, features = train_decision_tree(selected_mode)  # Get both the model and features
 
     # Input fields for weather variables
-    st.subheader(f"Predict Delays for {selected_mode}")
-    temperature = st.number_input("Temperature (°C)", value=15.0)
-    precipitation = st.number_input("Precipitation (mm)", value=0.0)
-    wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
-    snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
-
-    # Predict button
-    if st.button("Predict"):
-        input_data = [[temperature, precipitation, wind_speed]]
-        
-        # Include snowfall if it exists in the dataset
-        if "Snowfall (cm)" in data.columns:
-            input_data[0].append(snowfall)
-        
-        # Get the prediction
-        prediction = model.predict(input_data)
-        st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
-
-else:
-    st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
-
-# Footer
-st.markdown("---")
-st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
+    st.subheader(f"Predict Delays
