@@ -256,8 +256,31 @@ def train_decision_tree(mode):
 
 # Prediction Section
 if selected_modes:
-    selected_mode = selected_modes[0]  # Use the first selected mode for prediction
-    model, features = train_decision_tree(selected_mode)  # Get both the model and features
+    selected_mode = selected_modes[0]  
+    model, features = train_decision_tree(selected_mode) 
 
     # Input fields for weather variables
-    st.subheader(f"Predict Delays
+    st.subheader(f"Predict Delays for {selected_mode}")
+    temperature = st.number_input("Temperature (°C)", value=15.0)
+    precipitation = st.number_input("Precipitation (mm)", value=0.0)
+    wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
+    snowfall = st.number_input("Snowfall (cm)", value=0.0, disabled="Snowfall (cm)" not in data.columns)
+
+    # Predict button
+    if st.button("Predict"):
+        input_data = [[temperature, precipitation, wind_speed]]
+        
+        # Include snowfall if it exists in the dataset
+        if "Snowfall (cm)" in data.columns:
+            input_data[0].append(snowfall)
+        
+        # Get the prediction
+        prediction = model.predict(input_data)
+        st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+
+else:
+    st.warning("Please select at least one transport mode from the sidebar to proceed with predictions.")
+
+# Footer
+st.markdown("---")
+st.markdown("Developed by [Anas Kagigi](https://github.com/Anaskagigi/final-year-project_w191459).")
