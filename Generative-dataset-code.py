@@ -2,12 +2,15 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# date range
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Date range
 start_date = datetime(2019, 1, 1)
 end_date = datetime(2024, 12, 31)
 date_range = pd.date_range(start=start_date, end=end_date)
 
-# empty lists
+# Empty lists
 temperatures = []
 precipitations = []
 wind_speeds = []
@@ -19,47 +22,60 @@ delays = {mode: [] for mode in modes}
 cancellations = {mode: [] for mode in modes}
 riderships = {mode: [] for mode in modes}
 
+# Set base monthly average temperatures (°C) for London
+monthly_avg_temp = {
+    1: 5, 2: 6, 3: 9, 4: 12, 5: 16, 6: 19,
+    7: 22, 8: 21, 9: 18, 10: 14, 11: 9, 12: 6
+}
+
+# Set base monthly average precipitation (mm)
+monthly_avg_precip = {
+    1: 55, 2: 40, 3: 45, 4: 40, 5: 45, 6: 35,
+    7: 40, 8: 45, 9: 50, 10: 65, 11: 70, 12: 65
+}
+
 # Simulating the data
+previous_temp = 10  # Starting temperature
+
 for date in date_range:
-    # Simulate temperature based on month
-    if date.month in [12, 1, 2]:  # Winter
-        temp = round(np.random.uniform(-10, 5))
-    elif date.month in [3, 4, 5]:  # Spring
-        temp = round(np.random.uniform(5, 20))
-    elif date.month in [6, 7, 8]:  # Summer
-        temp = round(np.random.uniform(20, 35))
-    else:  # Fall
-        temp = round(np.random.uniform(10, 25))
-    
-    # Simulate precipitation
-    precip = round(np.random.uniform(0, 20)) if np.random.rand() < 0.3 else 0
-    
-    # Simulate wind speed
-    wind = round(np.random.uniform(5, 30))
-    
-    # Simulate weather condition
-    if precip > 15:
+    # Smooth temperature fluctuation around the monthly average
+    base_temp = monthly_avg_temp[date.month]
+    temp = previous_temp + np.random.uniform(-2, 2)  # small daily fluctuation
+    temp = temp * 0.7 + base_temp * 0.3  # drift slowly toward the monthly average
+    temp = round(temp, 1)
+    previous_temp = temp
+
+    # Precipitation with some randomness
+    avg_precip = monthly_avg_precip[date.month]
+    precip_chance = 0.4 if avg_precip > 50 else 0.2  # wetter months have more chance
+    precip = round(np.random.uniform(0, avg_precip)) if np.random.rand() < precip_chance else 0
+
+    # Wind speed - generally windier in colder months
+    if date.month in [11, 12, 1, 2]:
+        wind = round(np.random.uniform(15, 35))
+    else:
+        wind = round(np.random.uniform(5, 25))
+
+    # Determine weather condition
+    if precip > 20:
         condition = "Thunderstorm"
     elif precip > 10:
         condition = "Heavy Rain" if temp > 0 else "Heavy Snow"
-    elif precip > 5:
+    elif precip > 2:
         condition = "Light Rain" if temp > 0 else "Light Snow"
-    elif temp < 0:
-        condition = "Clear" if np.random.rand() < 0.8 else "Light Snow"
     else:
-        condition = "Clear" if np.random.rand() < 0.7 else "Partly Cloudy"
-    
-    # Simulate transport metrics
+        if temp < 3:
+            condition = "Frosty" if np.random.rand() < 0.7 else "Clear"
+        else:
+            condition = "Clear" if np.random.rand() < 0.7 else "Partly Cloudy"
+
+    # Transport simulation (same logic as yours)
     for mode in modes:
-        if condition == "Heavy Snow":
+        if condition in ["Heavy Snow", "Thunderstorm"]:
             delay = round(np.random.uniform(20, 35)) if mode != "Underground" else round(np.random.uniform(10, 20))
             cancel = round(np.random.uniform(8, 15)) if mode != "Underground" else round(np.random.uniform(2, 5))
             ridership = round(np.random.uniform(50, 150)) if mode != "Underground" else round(np.random.uniform(150, 200))
-        elif condition == "Thunderstorm":
-            delay = round(np.random.uniform(10, 20)) if mode != "Underground" else round(np.random.uniform(5, 10))
-            cancel = round(np.random.uniform(3, 8)) if mode != "Underground" else round(np.random.uniform(1, 3))
-            ridership = round(np.random.uniform(70, 120)) if mode != "Underground" else round(np.random.uniform(200, 250))
-        elif condition == "Light Snow" or condition == "Heavy Rain":
+        elif condition in ["Light Snow", "Heavy Rain"]:
             delay = round(np.random.uniform(10, 20)) if mode != "Underground" else round(np.random.uniform(5, 10))
             cancel = round(np.random.uniform(4, 8)) if mode != "Underground" else round(np.random.uniform(1, 3))
             ridership = round(np.random.uniform(80, 130)) if mode != "Underground" else round(np.random.uniform(220, 280))
@@ -67,16 +83,15 @@ for date in date_range:
             delay = round(np.random.uniform(5, 10)) if mode != "Underground" else round(np.random.uniform(2, 5))
             cancel = round(np.random.uniform(2, 5)) if mode != "Underground" else round(np.random.uniform(0, 2))
             ridership = round(np.random.uniform(90, 140)) if mode != "Underground" else round(np.random.uniform(250, 300))
-        else:  # Clear or Partly Cloudy
+        else:  # Clear, Partly Cloudy, Frosty
             delay = round(np.random.uniform(1, 5)) if mode != "Underground" else round(np.random.uniform(1, 3))
             cancel = round(np.random.uniform(0, 2)) if mode != "Underground" else round(np.random.uniform(0, 1))
             ridership = round(np.random.uniform(100, 150)) if mode != "Underground" else round(np.random.uniform(280, 320))
-        
-        # Append to lists
+
         delays[mode].append(delay)
         cancellations[mode].append(cancel)
         riderships[mode].append(ridership)
-    
+
     # Append weather data
     temperatures.append(temp)
     precipitations.append(precip)
@@ -99,7 +114,7 @@ for mode in modes:
 
 df = pd.DataFrame(data)
 
-# saving the data into CSV
-df.to_csv("london_transport_weather_2019_2024.csv", index=False)
+# Saving the data into CSV
+df.to_csv("london_transport_weather_2019_2024_improved.csv", index=False)
 
-print("Dataset generated successfully!")
+print("Improved dataset generated successfully!")
