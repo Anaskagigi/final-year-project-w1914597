@@ -10,11 +10,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Set page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Load the data
+# Load the data safely
 @st.cache_data
 def load_data():
     data = pd.read_csv("data/london_transport_weather_2019_2024_NEW.csv")
-    data['Date'] = pd.to_datetime(data['Date'], dayfirst=True)  # Fix UK date format
+    data['Date'] = pd.to_datetime(data['Date'], dayfirst=True, errors='coerce')  # Safe parsing
+    data = data.dropna(subset=['Date'])  # Drop rows where Date failed to parse
     data['Year'] = data['Date'].dt.year
     return data
 
@@ -32,7 +33,7 @@ if 'selected_modes' not in st.session_state:
 if 'selected_years' not in st.session_state:
     st.session_state.selected_years = []
 
-# Multi-select for sidebar
+# Multi-selects
 weather_conditions = data["Weather Condition"].unique()
 selected_conditions = st.sidebar.multiselect(
     "Select Weather Conditions", options=weather_conditions, default=st.session_state.selected_conditions
@@ -53,7 +54,7 @@ st.session_state.selected_conditions = selected_conditions
 st.session_state.selected_modes = selected_modes
 st.session_state.selected_years = selected_years
 
-# Filter the data
+# Filter the dataset
 filtered_data = data[
     (data["Weather Condition"].isin(selected_conditions)) &
     (data["Year"].isin(selected_years))
@@ -114,8 +115,8 @@ else:
     total_cancellations = filtered_data[[f"{mode} Cancellations (%)" for mode in selected_modes]].sum()
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=selected_modes, y=total_delays.values, name="Delays"))
-    fig.add_trace(go.Bar(x=selected_modes, y=total_cancellations.values, name="Cancellations"))
+    fig.add_trace(go.Bar(x=selected_modes, y=total_delays.values, name="Total Delays"))
+    fig.add_trace(go.Bar(x=selected_modes, y=total_cancellations.values, name="Total Cancellations"))
     fig.update_layout(barmode='stack', title="Total Delays and Cancellations")
     st.plotly_chart(fig)
 
@@ -197,7 +198,7 @@ if selected_modes:
 
     st.subheader(f"Prediction Model Evaluation for {selected_mode}")
     st.markdown(f"""
-    - **R² Score**: {r2:.2f} (higher is better, up to 1.0)
+    - **R² Score**: {r2:.2f} (higher is better, closer to 1.0)
     - **Mean Absolute Error (MAE)**: {mae:.2f} minutes
     - **Root Mean Squared Error (RMSE)**: {rmse:.2f} minutes
     """)
