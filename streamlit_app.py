@@ -66,7 +66,7 @@ filtered_data = data[
 ]
 
 # Dashboard title
-st.title("Impact of Weather on London's Public Transport")
+st.title("Impact of Weather on Public Transport")
 st.markdown("""
 This dashboard analyzes how different weather conditions affect delays, cancellations, and ridership across London's public transport modes.
 """)
