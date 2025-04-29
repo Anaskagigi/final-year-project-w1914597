@@ -184,7 +184,6 @@ def train_model_and_evaluate(mode):
     model = DecisionTreeRegressor(max_depth=5, random_state=42)
     model.fit(X_train, y_train)
 
-    # Evaluate model
     y_pred = model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
@@ -193,18 +192,7 @@ def train_model_and_evaluate(mode):
     return model, features, r2, mae, rmse
 
 if selected_modes:
-    selected_mode = selected_modes[0]
-    model, features, r2, mae, rmse = train_model_and_evaluate(selected_mode)
-
-    st.subheader(f"Prediction Model Evaluation for {selected_mode}")
-    st.markdown(f"""
-    - **R² Score**: {r2:.2f} (higher is better, closer to 1.0)
-    - **Mean Absolute Error (MAE)**: {mae:.2f} minutes
-    - **Root Mean Squared Error (RMSE)**: {rmse:.2f} minutes
-    """)
-
-    st.subheader(f"Predict Delay for {selected_mode}")
-
+    st.subheader("Enter Weather Conditions for Prediction")
     temperature = st.number_input("Temperature (°C)", value=15.0)
     precipitation = st.number_input("Precipitation (mm)", value=0.0)
     wind_speed = st.number_input("Wind Speed (km/h)", value=10.0)
@@ -214,9 +202,24 @@ if selected_modes:
         snowfall = st.number_input("Snowfall (cm)", value=0.0)
         input_values.append(snowfall)
 
-    if st.button("Predict Delay"):
-        prediction = model.predict([input_values])
-        st.success(f"Predicted Delay: {prediction[0]:.1f} minutes")
+    if st.button("Predict Delays for Selected Modes"):
+        results = []
+
+        for mode in selected_modes:
+            model, features, r2, mae, rmse = train_model_and_evaluate(mode)
+            predicted_delay = model.predict([input_values])[0]
+
+            results.append({
+                "Mode": mode,
+                "R² Score": round(r2, 2),
+                "MAE (min)": round(mae, 2),
+                "RMSE (min)": round(rmse, 2),
+                "Predicted Delay (min)": round(predicted_delay, 1)
+            })
+
+        results_df = pd.DataFrame(results)
+        st.subheader("Prediction Results")
+        st.dataframe(results_df)
 
 # Footer
 st.markdown("---")
