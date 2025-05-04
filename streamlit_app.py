@@ -14,8 +14,8 @@ st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 @st.cache_data
 def load_data():
     data = pd.read_csv("data/london_transport_weather_2019_2024_NEW.csv")
-    data['Date'] = pd.to_datetime(data['Date'], dayfirst=True, errors='coerce')  # Safe parsing
-    data = data.dropna(subset=['Date'])  # Drop rows where Date failed to parse
+    data['Date'] = pd.to_datetime(data['Date'], dayfirst=True, errors='coerce') 
+    data = data.dropna(subset=['Date'])  
     data['Year'] = data['Date'].dt.year
     return data
 
@@ -49,12 +49,12 @@ selected_years = st.sidebar.multiselect(
     "Select Years", options=available_years, default=st.session_state.selected_years
 )
 
-# Save selections
+# Saving selections
 st.session_state.selected_conditions = selected_conditions
 st.session_state.selected_modes = selected_modes
 st.session_state.selected_years = selected_years
 
-# Filter the dataset
+# Filtering the dataset
 filtered_data = data[
     (data["Weather Condition"].isin(selected_conditions)) &
     (data["Year"].isin(selected_years))
