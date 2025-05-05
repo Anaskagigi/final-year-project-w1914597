@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Set page configuration
+# Setting page configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Load the data safely
+# Loading the data safely
 @st.cache_data
 def load_data():
     data = pd.read_csv("data/london_transport_weather_2019_2024_NEW.csv")
@@ -166,9 +166,9 @@ else:
         mime="text/csv"
     )
 
-# =====================
-# Prediction Section
-# =====================
+# ========================================
+# Prediction Section " Prediction Model" 
+# ========================================
 
 st.header("Predict Delays Based on Weather Conditions")
 
