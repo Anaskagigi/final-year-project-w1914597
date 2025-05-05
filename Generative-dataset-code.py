@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# Set random seed for reproducibility
+# Setting random seed for reproducibility
 np.random.seed(42)
 
 # Date range
@@ -22,20 +22,20 @@ delays = {mode: [] for mode in modes}
 cancellations = {mode: [] for mode in modes}
 riderships = {mode: [] for mode in modes}
 
-# Set base monthly average temperatures (°C) for London
+# Setting base monthly average temperatures (°C) for London
 monthly_avg_temp = {
     1: 5, 2: 6, 3: 9, 4: 12, 5: 16, 6: 19,
     7: 22, 8: 21, 9: 18, 10: 14, 11: 9, 12: 6
 }
 
-# Set base monthly average precipitation (mm)
+# Setting base monthly average precipitation (mm)
 monthly_avg_precip = {
     1: 55, 2: 40, 3: 45, 4: 40, 5: 45, 6: 35,
     7: 40, 8: 45, 9: 50, 10: 65, 11: 70, 12: 65
 }
 
 # Simulating the data
-previous_temp = 10  # Starting temperature
+previous_temp = 10  # the starting temperature
 
 for date in date_range:
     # Smooth temperature fluctuation around the monthly average
@@ -47,16 +47,16 @@ for date in date_range:
 
     # Precipitation with some randomness
     avg_precip = monthly_avg_precip[date.month]
-    precip_chance = 0.4 if avg_precip > 50 else 0.2  # wetter months have more chance
+    precip_chance = 0.4 if avg_precip > 50 else 0.2  
     precip = round(np.random.uniform(0, avg_precip)) if np.random.rand() < precip_chance else 0
 
-    # Wind speed - generally windier in colder months
+    # Wind speed 
     if date.month in [11, 12, 1, 2]:
         wind = round(np.random.uniform(15, 35))
     else:
         wind = round(np.random.uniform(5, 25))
 
-    # Determine weather condition
+    # Determining the weather condition
     if precip > 20:
         condition = "Thunderstorm"
     elif precip > 10:
@@ -69,7 +69,7 @@ for date in date_range:
         else:
             condition = "Clear" if np.random.rand() < 0.7 else "Partly Cloudy"
 
-    # Transport simulation (same logic as yours)
+    # Transport simulation 
     for mode in modes:
         if condition in ["Heavy Snow", "Thunderstorm"]:
             delay = round(np.random.uniform(20, 35)) if mode != "Underground" else round(np.random.uniform(10, 20))
@@ -92,13 +92,13 @@ for date in date_range:
         cancellations[mode].append(cancel)
         riderships[mode].append(ridership)
 
-    # Append weather data
+    # Append for weather data
     temperatures.append(temp)
     precipitations.append(precip)
     wind_speeds.append(wind)
     weather_conditions.append(condition)
 
-# Creating DataFrame
+# Creating a DataFrame
 data = {
     "Date": date_range,
     "Temperature (°C)": temperatures,
@@ -115,6 +115,6 @@ for mode in modes:
 df = pd.DataFrame(data)
 
 # Saving the data into CSV
-df.to_csv("london_transport_weather_2019_2024_improved.csv", index=False)
+df.to_csv("london_transport_weather_2019_2024_New.csv", index=False)
 
 print("Improved dataset generated successfully!")
